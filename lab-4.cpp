@@ -168,6 +168,59 @@ void run_priority_preemptive(vector<Process> jobs) {
     print_algorithm_results("Priority (Pre-emptive)", finished, totalTurnaroundTime);
 }
 
+// This is the priority non preemptive scheduling algorithm
+void run_shortest_job_next_non_preemptive(vector<Process> jobs) {
+    // Duplicate the input vector into a waiting queue
+    vector<Process> queue = jobs;
+
+    // Initialize metrics tracking variables
+    int currentTime = 0;
+    int totalTurnaroundTime = 0;
+    int executionIndex = 0;
+
+    // Initialize two more vectors for the arrivalTimes and the startTimes
+    // The arrivalTimes are stored by default in the job startTime hencei it is needed to be copied
+    vector<Process> finished;
+    vector<int> arrivalTimes;
+    for (const Process& job : jobs) arrivalTimes.push_back(job.startTime);
+
+    // Iterate through the queue of jobs until it is empty
+    while (!queue.empty()) {
+        // Find the shortest job that has arrived and is waiting
+        int shortestJobIndex = -1;
+        int minBurstTime = INT_MAX;
+        for (int i = 0; i < queue.size(); i++) {
+            if (arrivalTimes[i] <= currentTime && queue[i].burstTime < minBurstTime) {
+                shortestJobIndex = i;
+                minBurstTime = queue[i].burstTime;
+            }
+        }
+
+        // If no process is available at the current time, increment the time and continue
+        if (shortestJobIndex == -1) {
+            currentTime++;
+            continue;
+        }
+
+        // Execute the shortest job
+        Process job = queue[shortestJobIndex];
+        currentTime += job.burstTime;
+        job.completionTime = currentTime;
+        job.turnaroundTime = job.completionTime - arrivalTimes[shortestJobIndex];
+        totalTurnaroundTime += job.turnaroundTime;
+        job.executionIndex = executionIndex++;
+        job.startTime = currentTime - job.burstTime; // Set the correct start time
+        finished.push_back(job);
+
+        // Remove the executed job from the waiting queue and its corresponding arrival time
+        queue.erase(queue.begin() + shortestJobIndex);
+        arrivalTimes.erase(arrivalTimes.begin() + shortestJobIndex);
+    }
+
+    // Print the algorithm execution results
+    print_algorithm_results("Shortest Job Next (Non-Preemptive)", finished, totalTurnaroundTime);
+}
+
 int main() {
     // Read the jobs/processes from the file
     vector<Process> jobs;
@@ -196,6 +249,9 @@ int main() {
 
     // Run the priority preemptive scheduling algorithm
     run_priority_preemptive(jobs);
+
+    // Run the shortest job next non preemptive scheduling algorithm
+    run_shortest_job_next_non_preemptive(jobs);
 
     return 0;
 }
